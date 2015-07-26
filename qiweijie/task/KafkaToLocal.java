@@ -9,26 +9,34 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 
-import org.apache.tools.ant.taskdefs.Sleep;
-
-import com.sun.mail.handlers.message_rfc822;
-
 import kafka.consumer.Consumer;
 import kafka.consumer.ConsumerConfig;
 import kafka.consumer.ConsumerIterator;
 import kafka.consumer.KafkaStream;
-import kafka.examples.KafkaProperties;
 import kafka.javaapi.consumer.ConsumerConnector;
 import kafka.message.Message;
 import kafka.message.MessageAndMetadata;
 
 public class KafkaToLocal extends Thread{
 	public static void main(String[] args){
+		String topic;
+		String filename;
+		Integer index;
+		Integer num;
 //		获取参数，topic，filename，index，多少条开始存到本地
-		String topic = args[0];
-		String filename = args[1];
-		Integer index = Integer.parseInt(args[2]);
-		Integer num = Integer.parseInt(args[3]);
+		try {
+			 topic = args[0];
+			 filename = args[1];
+			 index = Integer.parseInt(args[2]);
+			 num = Integer.parseInt(args[3]);
+		} catch (Exception e) {
+//			使用默认配置
+			e.printStackTrace();
+			 topic = "qwj-task";
+			 filename = "result.txt";
+			 index = 0;
+			 num = 100;
+		}
 		Integer count = 0;
 		List<String> content=new ArrayList<String>();
 //		连接kafka
