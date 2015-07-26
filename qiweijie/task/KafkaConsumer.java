@@ -39,20 +39,20 @@ public class KafkaConsumer extends Thread
 
     @Override
     public void run() {
+        System.out.println("begin receive：");
         Map<String, Integer> topicCountMap = new HashMap<String, Integer>();
         topicCountMap.put(topic, new Integer(1));
         Map<String, List<KafkaStream<Message>>> consumerMap = consumer.createMessageStreams(topicCountMap);
         KafkaStream<Message> stream = consumerMap.get(topic).get(0);
         ConsumerIterator<Message> it = stream.iterator();
         while (it.hasNext()) {
-            System.out.println("begin receive：");
         	MessageAndMetadata<Message> message = it.next();
             ByteBuffer buffer = message.message().payload();
             byte [] bytes = new byte[buffer.remaining()];
             buffer.get(bytes);
-            System.out.println("receive："+new String(bytes)+"it's topic is "+message.topic());
+            System.out.println("receive："+new String(bytes)+". it's topic is "+message.topic()+". it's offset is ");
             try {
-                sleep(3000);
+                sleep(300);
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
