@@ -1,5 +1,6 @@
-package qiweijie.task;
+package com.baifendian.tools.kafka;
 
+import java.io.BufferedWriter;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -16,7 +17,11 @@ import kafka.consumer.KafkaStream;
 import kafka.javaapi.consumer.ConsumerConnector;
 import kafka.message.Message;
 import kafka.message.MessageAndMetadata;
-
+/** 
+ * 
+ * @author 戚伟杰 
+ * @version 2015年7月27日 下午12:45:49  
+ */
 public class KafkaToLocal extends Thread{
 	public static void main(String[] args){
 		String topic;
@@ -88,9 +93,10 @@ public class KafkaToLocal extends Thread{
 		// TODO Auto-generated method stub
 		try {
 			FileWriter writer = new FileWriter(filename,true);
+			BufferedWriter bw = new BufferedWriter(writer); 
 			for(String message:content){
-				writer.write(message);
-				writer.write("\r\n");
+				bw.write(message);
+				bw.newLine();
 			}
 			if(writer!=null){
 				writer.close();

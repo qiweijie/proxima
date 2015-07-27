@@ -1,10 +1,14 @@
-package qiweijie.task;
+package com.baifendian.tools.kafka;
 
 import java.util.Properties;
 
 import kafka.javaapi.producer.ProducerData;
 import kafka.producer.ProducerConfig;
-
+/** 
+ * 
+ * @author 戚伟杰 
+ * @version 2015年7月27日 下午12:45:49  
+ */
 public class KafkaProducer extends Thread
 {
     private final kafka.javaapi.producer.Producer<Integer, String> producer;

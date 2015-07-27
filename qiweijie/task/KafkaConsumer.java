@@ -1,4 +1,4 @@
-package qiweijie.task;
+package com.baifendian.tools.kafka;
 
 import java.nio.ByteBuffer;
 import java.util.HashMap;
@@ -9,11 +9,14 @@ import java.util.Properties;
 import kafka.consumer.ConsumerConfig;
 import kafka.consumer.ConsumerIterator;
 import kafka.consumer.KafkaStream;
-import kafka.examples.KafkaProperties;
 import kafka.javaapi.consumer.ConsumerConnector;
 import kafka.message.Message;
 import kafka.message.MessageAndMetadata;
-
+/** 
+ * 
+ * @author 戚伟杰 
+ * @version 2015年7月27日 下午12:45:49  
+ */
 public class KafkaConsumer extends Thread
 {
     private final ConsumerConnector consumer;

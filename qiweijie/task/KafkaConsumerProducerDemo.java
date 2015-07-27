@@ -1,4 +1,9 @@
-package qiweijie.task;
+package com.baifendian.tools.kafka;
+/** 
+ * 
+ * @author 戚伟杰 
+ * @version 2015年7月27日 下午12:45:49  
+ */
 
 public class KafkaConsumerProducerDemo
 {

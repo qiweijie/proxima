@@ -1,4 +1,4 @@
-package qiweijie.task;
+package com.baifendian.tools.kafka;
 
 import java.io.BufferedWriter;
 import java.io.File;  
@@ -10,9 +10,9 @@ import java.io.RandomAccessFile;
   
 /** 
  * 
- * @author malik 
- * @version 2011-3-10 下午10:49:41 
- */  
+ * @author 戚伟杰 
+ * @version 2015年7月27日 下午12:45:49  
+ */
 public class AppendFile {  
       
     public static void method1(String file, String conent) {     
