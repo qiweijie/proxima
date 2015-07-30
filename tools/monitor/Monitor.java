@@ -57,7 +57,7 @@ public class Monitor extends Thread {
 				List<String> boltList = new ArrayList<String>();
 				for(String key:bolts.keySet()){
 					if(!key.startsWith("__")){
-						System.out.println(key);
+//						System.out.println(key);
 						boltList.add(key);
 					}
 				}
@@ -82,21 +82,44 @@ public class Monitor extends Thread {
 	}
 private void Compute(Map<String, List<TaskSummary>> classifiedData) {
 		// TODO Auto-generated method stub
+		Long total_emitted = (long) 0;
+		Double total_send = (double) 0;
+		Double total_recv = (double) 0;
+		Long total_acked = (long) 0;
+		Double total_process = (double) 0;
+		Long total_failed = (long) 0;
+		Integer total_tasks = 0;
 		for(String bolt:classifiedData.keySet()){
 			List<TaskSummary> temp = classifiedData.get(bolt);
 			for(TaskSummary ts:temp){
-				Map<String,String> result = ComputeTask(ts);
-				WriteToDatabase( result);
+//				System.out.println("ts");
+				total_tasks++;
+				Map<String,Number> temp1 = ComputeTask(ts);
+				total_emitted+=temp1.get("total_emitted").longValue();
+				total_send+=temp1.get("total_send").doubleValue();
+				total_recv+=temp1.get("total_recv").doubleValue();
+				total_acked+=temp1.get("total_acked").longValue();
+				total_process+=temp1.get("total_process").doubleValue();
+				total_failed+=temp1.get("total_failed").longValue();
 			}
 		}
+		Map<String,Number> result=new TreeMap<String, Number>();
+		result.put("total_emitted", total_emitted);
+		result.put("total_send", total_send);
+		result.put("total_recv", total_recv);
+		result.put("total_acked", total_acked);
+		result.put("total_process", total_process/total_tasks);
+		result.put("total_failed", total_failed);
+		WriteToDatabase( result);
 }
-private void WriteToDatabase(Map<String, String> result) {
+private void WriteToDatabase(Map<String, Number> result) {
 	// TODO Auto-generated method stub
-	System.out.println(JSONObject.toJSONString(result));
+	System.out.println("\tthis bolt's result showed as followed:\r\n\t"+result);
+//	System.out.println(JSONObject.toJSONString(result));
 }
 // 计算每一个task，返回一个字典
 @SuppressWarnings("null")
-private Map<String,String> ComputeTask(TaskSummary ts) {
+private Map<String, Number> ComputeTask(TaskSummary ts) {
 // TODO Auto-generated method stub
 	Map<String, Long> emitted = ts.get_stats().get_emitted().get("600");
 	Long total_emitted = (long) 0;
@@ -128,13 +151,13 @@ private Map<String,String> ComputeTask(TaskSummary ts) {
 	for(GlobalStreamId GlobalStreamId_id:failed.keySet()){
 		total_failed+=failed.get(GlobalStreamId_id);
 	}
-	Map<String,String> result=null;
-	result.put("total_emitted", total_emitted.toString());
-	result.put("total_send", total_send.toString());
-	result.put("total_recv", total_recv.toString());
-	result.put("total_acked", total_acked.toString());
-	result.put("total_process", total_process.toString());
-	result.put("total_failed", total_failed.toString());
+	Map<String,Number> result=new TreeMap<String, Number>();
+	result.put("total_emitted", total_emitted);
+	result.put("total_send", total_send);
+	result.put("total_recv", total_recv);
+	result.put("total_acked", total_acked);
+	result.put("total_process", total_process);
+	result.put("total_failed", total_failed);
 	return result;
 }
 	//	把tasks按照bolt-tasks对应好
@@ -142,21 +165,25 @@ private Map<String,String> ComputeTask(TaskSummary ts) {
 	private Map<String, List<TaskSummary>> Classify(List<String> boltList,
 			List<WorkerSummary> workerSummary) {
 		// TODO Auto-generated method stub
+		
 		Map<String, List<TaskSummary>> classified = new TreeMap<String, List<TaskSummary>>();;
-		for(WorkerSummary ws:workerSummary){
-			List<TaskSummary> taskSummaries = ws.get_tasks();
-			for(String bolt:boltList){
-				List<TaskSummary> tl = new ArrayList<TaskSummary>();
+		for(String bolt:boltList){
+			List<TaskSummary> tl = new ArrayList<TaskSummary>();
+			for(WorkerSummary ws:workerSummary){
+//				System.out.println("ws");
+				List<TaskSummary> taskSummaries = ws.get_tasks();
 				for(TaskSummary ts:taskSummaries){
+//					System.out.println("ts");
 //					是bolts的task还是spouts的task，只选bolts的
 					if(ts.get_component_id().equals(bolt)){
+//						System.out.println(ts.get_component_id());
 						tl.add(ts);
-						taskSummaries.remove(ts);
+//						taskSummaries.remove(ts);
 					}
 				}
-//				System.out.println(tl);
-				classified.put(bolt, tl);
 			}
+			System.out.println("boltName:"+bolt+",total tasks number :"+tl.size());
+			classified.put(bolt, tl);
 		}
 		return classified;
 	}
