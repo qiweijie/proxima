@@ -1,6 +1,9 @@
 package com.baifendian.tools.monitor;
 
+import java.net.UnknownHostException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
@@ -11,6 +14,12 @@ import org.apache.thrift7.transport.TFramedTransport;
 import org.apache.thrift7.transport.TSocket;
 import org.apache.thrift7.transport.TTransportException;
 import org.json.simple.JSONObject;
+
+import com.mongodb.BasicDBObject;
+import com.mongodb.DB;
+import com.mongodb.DBCollection;
+import com.mongodb.Mongo;
+import com.mongodb.MongoClient;
 
 import backtype.storm.generated.Bolt;
 import backtype.storm.generated.GlobalStreamId;
@@ -48,31 +57,41 @@ public class Monitor extends Thread {
 		Client client = new Client(tBinaryProtocol);
 		try {
 			tFramedTransport.open();
-			try {
-//			从stormTopology里面获取bolt信息，需要先从topoInfo里面获取id
-				TopologyInfo topologyInfo = client.getTopologyInfoByName(this.topoName);
-				StormTopology stormTopology = client.getTopology(topologyInfo.get_id());
-//				获取bolt
-				Map<String,Bolt> bolts = stormTopology.get_bolts();
-				List<String> boltList = new ArrayList<String>();
-				for(String key:bolts.keySet()){
-					if(!key.startsWith("__")){
-//						System.out.println(key);
-						boltList.add(key);
+			while(true){
+				try {
+	//			从stormTopology里面获取bolt信息，需要先从topoInfo里面获取id
+					TopologyInfo topologyInfo = client.getTopologyInfoByName(this.topoName);
+					StormTopology stormTopology = client.getTopology(topologyInfo.get_id());
+	//				获取bolt
+					Map<String,Bolt> bolts = stormTopology.get_bolts();
+					List<String> boltList = new ArrayList<String>();
+					for(String key:bolts.keySet()){
+						if(!key.startsWith("__")){
+	//						System.out.println(key);
+							boltList.add(key);
+						}
 					}
+	//				获取task信息
+					List<WorkerSummary> workerSummary = topologyInfo.get_workers();
+	//				把tasks按照bolt-tasks对应好
+					Map<String, List<TaskSummary>> classifiedData = Classify(boltList,workerSummary);
+	//				对每个bolt的tasks进行处理处理
+					Map<String, Number> result=Compute(classifiedData);
+	//				把结果写入mongo数据库，以时间为键，值为一个字典（键为bolt名字，值为数据）
+					WriteToDatabase( result);
+					try {
+						sleep(this.frequence);
+					} catch (InterruptedException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
+				} catch (NotAliveException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				} catch (TException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
 				}
-//				获取task信息
-				List<WorkerSummary> workerSummary = topologyInfo.get_workers();
-//				把tasks按照bolt-tasks对应好
-				Map<String, List<TaskSummary>> classifiedData = Classify(boltList,workerSummary);
-//				对每个bolt的tasks进行处理处理
-				Compute(classifiedData);
-			} catch (NotAliveException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			} catch (TException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
 			}
 		} catch (TTransportException e) {
 			// TODO Auto-generated catch block
@@ -80,7 +99,7 @@ public class Monitor extends Thread {
 		}
 		super.run();
 	}
-private void Compute(Map<String, List<TaskSummary>> classifiedData) {
+private Map<String, Number> Compute(Map<String, List<TaskSummary>> classifiedData) {
 		// TODO Auto-generated method stub
 		Long total_emitted = (long) 0;
 		Double total_send = (double) 0;
@@ -110,11 +129,36 @@ private void Compute(Map<String, List<TaskSummary>> classifiedData) {
 		result.put("total_acked", total_acked);
 		result.put("total_process", total_process/total_tasks);
 		result.put("total_failed", total_failed);
-		WriteToDatabase( result);
+		return result;
 }
 private void WriteToDatabase(Map<String, Number> result) {
 	// TODO Auto-generated method stub
 	System.out.println("\tthis bolt's result showed as followed:\r\n\t"+result);
+//	获取当前时间
+	SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+	String now = df.format(new Date());
+	try {
+//		MongoClient mongo = new MongoClient(Settings.mongoHost,Settings.mongoPort);
+		MongoClient mongo = new MongoClient(Settings.mongoHost,Settings.mongoPort);
+		DB db = mongo.getDB(Settings.mongoDb);
+		DBCollection collection = db.getCollection(Settings.mongoCollection);
+		BasicDBObject document = new BasicDBObject();
+		document.put(now, JSONObject.toJSONString(result));
+		collection.insert(document);
+		System.out.println("insert success!");
+//        // 创建要查询的document
+//        BasicDBObject searchQuery = new BasicDBObject();
+//        searchQuery.put("id", 1001);
+//        // 使用collection的find方法查找document
+//        DBCursor cursor = collection.find(searchQuery);
+//        //循环输出结果
+//        while (cursor.hasNext()) {
+//        System.out.println(cursor.next());
+//        }
+	} catch (UnknownHostException e) {
+		// TODO Auto-generated catch block
+		e.printStackTrace();
+	}
 //	System.out.println(JSONObject.toJSONString(result));
 }
 // 计算每一个task，返回一个字典
